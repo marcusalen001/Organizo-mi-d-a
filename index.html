@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¡Mi Día!</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #1a1a2e;
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 8%  12%, rgba(255,255,255,.55) 0%, transparent 100%),
+    radial-gradient(1px 1px at 28% 38%, rgba(255,255,255,.35) 0%, transparent 100%),
+    radial-gradient(2px 2px at 53%  8%, rgba(255,255,255,.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 73% 58%, rgba(255,255,255,.28) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 22%, rgba(255,255,255,.55) 0%, transparent 100%),
+    radial-gradient(2px 2px at 18% 78%, rgba(255,255,255,.38) 0%, transparent 100%),
+    radial-gradient(1px 1px at 63% 83%, rgba(255,255,255,.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 43% 52%, rgba(255,255,255,.28) 0%, transparent 100%),
+    radial-gradient(1px 1px at 91% 70%, rgba(255,255,255,.40) 0%, transparent 100%),
+    radial-gradient(2px 2px at 37% 92%, rgba(255,255,255,.30) 0%, transparent 100%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── PAGE ─────────────────────────────────────────────────────────── */
+.page {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 12px 60px; gap: 16px;
+}
+
+/* Title */
+.title-bar { text-align: center; animation: bounceIn .7s cubic-bezier(.68,-.55,.265,1.55); }
+@keyframes bounceIn {
+  0%   { transform:scale(.3); opacity:0; }
+  60%  { transform:scale(1.1); }
+  100% { transform:scale(1);  opacity:1; }
+}
+.title-bar h1 {
+  font-family: 'Baloo 2', cursive; font-size: clamp(1.9rem,5vw,3rem); font-weight:800;
+  background: linear-gradient(135deg,#FF6B6B,#FECA57,#48DBFB,#1DD1A1);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  filter: drop-shadow(0 2px 8px rgba(255,107,107,.4)); line-height:1.1;
+}
+.title-bar p { color:rgba(255,255,255,.5); font-size:.8rem; margin-top:4px; }
+
+/* ── CONTENT ROW ─────────────────────────────────────────────────── */
+.content {
+  display: flex; gap: 14px; width: 100%; max-width: 1000px; align-items: flex-start;
+}
+
+/* ── BANK (sticky sidebar) ───────────────────────────────────────── */
+.bank {
+  width: 172px; flex-shrink: 0;
+  position: sticky; top: 16px;
+  background: rgba(255,255,255,.05);
+  border: 2px dashed rgba(255,255,255,.18);
+  border-radius: 20px;
+  padding: 12px 9px 14px;
+  display: flex; flex-direction: column; gap: 7px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.1) transparent;
+}
+.bank-title {
+  font-family:'Baloo 2',cursive; font-weight:700; font-size:.76rem;
+  color:rgba(255,255,255,.58); text-align:center; line-height:1.35;
+  padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.bank-chip {
+  display:flex; align-items:center; gap:7px;
+  padding:8px 11px; border-radius:50px;
+  font-family:'Baloo 2',cursive; font-weight:700; font-size:.78rem;
+  cursor:grab; user-select:none; color:#1a1a2e;
+  box-shadow:0 3px 10px rgba(0,0,0,.35);
+  transition:transform .15s, box-shadow .15s, opacity .2s;
+  touch-action:none; white-space:nowrap;
+}
+.bank-chip:hover       { transform:scale(1.06); box-shadow:0 6px 16px rgba(0,0,0,.45); }
+.bank-chip.dragging    { opacity:.3; transform:scale(.93); }
+.bank-chip.used        { opacity:.15; pointer-events:none; filter:grayscale(.9); }
+.bank-chip .chip-emoji { font-size:1rem; flex-shrink:0; }
+
+/* reset button */
+.reset-btn {
+  margin-top:4px; background:rgba(255,107,107,.18);
+  border:1.5px solid rgba(255,107,107,.35); color:#FF6B6B;
+  border-radius:12px; padding:8px; font-family:'Baloo 2',cursive;
+  font-weight:700; font-size:.75rem; cursor:pointer;
+  transition:all .2s; text-align:center;
+}
+.reset-btn:hover { background:rgba(255,107,107,.32); transform:scale(1.04); }
+
+/* ── TIMELINE ────────────────────────────────────────────────────── */
+.timeline-col { flex:1; min-width:0; }
+
+.timeline-track {
+  position:relative; width:100%;
+  background:rgba(255,255,255,.04);
+  border-radius:24px; border:2px solid rgba(255,255,255,.1);
+  overflow:hidden;
+  transition: border-color .2s;
+}
+.timeline-track.drop-active { border-color:rgba(255,255,255,.28); }
+
+/* ruler */
+.hour-ruler { position:absolute; left:0; top:0; bottom:0; width:46px; pointer-events:none; z-index:4; }
+.hour-tick {
+  position:absolute; left:0; width:100%;
+  display:flex; align-items:flex-start;
+  padding:3px 0 0 6px;
+  border-top:1px solid rgba(255,255,255,.07);
+  font-family:'Baloo 2',cursive; font-size:.63rem;
+  color:rgba(255,255,255,.28); font-weight:600;
+}
+
+/* zones */
+.zones-layer { position:absolute; inset:0; left:46px; pointer-events:none; z-index:1; }
+.zone { position:absolute; left:0; right:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.zone-label {
+  font-family:'Baloo 2',cursive; font-weight:800;
+  color:rgba(255,255,255,.5); letter-spacing:.04em;
+  text-shadow:0 1px 4px rgba(0,0,0,.5);
+}
+
+/* markers */
+.marker {
+  position:absolute; left:46px; right:0; height:54px;
+  z-index:10; display:flex; align-items:center;
+  cursor:grab; touch-action:none; user-select:none;
+}
+.marker:active { cursor:grabbing; }
+.marker-line {
+  position:absolute; left:-46px; right:0; height:3px;
+  top:50%; transform:translateY(-50%);
+  pointer-events:none; z-index:-1; border-radius:2px;
+}
+.marker-inner {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(18,18,38,.88); backdrop-filter:blur(8px);
+  border-radius:14px; padding:7px 12px 7px 8px;
+  border:2px solid transparent;
+  box-shadow:0 4px 14px rgba(0,0,0,.45);
+  min-width:145px; max-width:240px;
+  transition:transform .15s, box-shadow .15s;
+  pointer-events:none;
+}
+.marker:hover .marker-inner { transform:scale(1.04); box-shadow:0 8px 22px rgba(0,0,0,.55); }
+.marker-emoji { font-size:1.35rem; flex-shrink:0; }
+.marker-name  { font-family:'Baloo 2',cursive; font-weight:700; font-size:.86rem; line-height:1.15; }
+.marker-time  { font-family:'Nunito',sans-serif; font-size:.68rem; font-weight:700; color:rgba(255,255,255,.48); margin-top:1px; }
+
+/* drop ghost */
+.drop-ghost {
+  position:absolute; left:46px; right:0; height:54px;
+  border:2px dashed rgba(255,255,255,.32); border-radius:14px;
+  background:rgba(255,255,255,.05); pointer-events:none; z-index:20; display:none;
+}
+
+/* shake */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-7px)}
+  40%{transform:translateX(7px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.marker.shake .marker-inner { animation:shake .5s ease; }
+
+/* ── TOAST ───────────────────────────────────────────────────────── */
+.toast {
+  position:fixed; top:18px; left:50%;
+  transform:translateX(-50%) translateY(-90px);
+  background:#e84545; color:#fff;
+  font-family:'Baloo 2',cursive; font-weight:700; font-size:.92rem;
+  padding:11px 20px; border-radius:50px;
+  box-shadow:0 8px 24px rgba(255,100,100,.45);
+  z-index:1000; white-space:nowrap;
+  transition:transform .4s cubic-bezier(.68,-.55,.265,1.55);
+}
+.toast.ok   { background:#1dd1a1; box-shadow:0 8px 24px rgba(29,209,161,.4); }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── DRAG CLONE ──────────────────────────────────────────────────── */
+#dragClone {
+  position:fixed; pointer-events:none; z-index:9999;
+  opacity:.9; transform:scale(1.08) rotate(2deg); display:none;
+}
+
+@media (max-width:580px) {
+  .bank { width:136px; }
+  .bank-chip { font-size:.7rem; padding:7px 8px; }
+  .marker-inner { min-width:110px; }
+}
+</style>
+</head>
+<body>
+
+<div id="dragClone"></div>
+<div class="toast" id="toast"><span id="toastMsg">…</span></div>
+
+<div class="page">
+  <div class="title-bar">
+    <h1>✨ ¡Mi Día! ✨</h1>
+    <p>Arrastra los bloques a tu línea del tiempo · Doble clic para devolverlos</p>
+  </div>
+
+  <div class="content">
+    <!-- BANK -->
+    <div class="bank" id="bank">
+      <div class="bank-title">🎒 Tus bloques<br>¡Arrástralos!</div>
+      <div id="bankItems"></div>
+      <button class="reset-btn" onclick="resetAll()">🔄 Reiniciar</button>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="timeline-col">
+      <div class="timeline-track" id="timelineTrack">
+        <div class="hour-ruler"  id="hourRuler"></div>
+        <div class="zones-layer" id="zonesLayer"></div>
+        <div class="drop-ghost"  id="dropGhost"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
+const HOUR_START  = 6;
+const HOUR_END    = 24;
+const TOTAL_HOURS = HOUR_END - HOUR_START;
+
+// Adaptive spacing
+const MIN_SEG_PX = 86;   // minimum px for any gap between 2 consecutive markers
+const MAX_SEG_PX = 200;  // maximum px for a gap (avoids huge empty stretches)
+const BASE_PX_HR = 68;   // baseline pixels per hour
+
+const COLORS = [
+  '#FF6B6B','#FF9F43','#FECA57','#1DD1A1',
+  '#48DBFB','#54A0FF','#a29bfe','#fd79a8',
+  '#00cec9','#BADC58','#f9ca24','#6ab04c',
+  '#e17055','#74b9ff',
+];
+const ZONE_BG = [
+  'rgba(255,107,107,.2)','rgba(255,159,67,.2)','rgba(254,202,87,.16)',
+  'rgba(29,209,161,.16)','rgba(72,219,251,.17)','rgba(84,160,255,.2)',
+  'rgba(162,155,254,.18)','rgba(253,121,168,.18)','rgba(0,206,201,.16)',
+  'rgba(186,220,88,.16)','rgba(249,202,36,.14)','rgba(106,176,76,.17)',
+  'rgba(225,112,85,.18)','rgba(116,185,255,.18)',
+];
+
+const DEFS = [
+  { id:'levanto',     name:'Me levanto',       emoji:'🌅', def:7.5  },
+  { id:'cole',        name:'Voy al cole',       emoji:'🎒', def:9.0  },
+  { id:'comida',      name:'Comida',            emoji:'🍽️', def:14.0 },
+  { id:'futbol',      name:'Entreno Fútbol',    emoji:'⚽', def:17.5 },
+  { id:'parque',      name:'Parque',            emoji:'🌳', def:19.0 },
+  { id:'deberes',     name:'Deberes',           emoji:'📚', def:null },
+  { id:'ducha',       name:'Ducha',             emoji:'🚿', def:null },
+  { id:'cena',        name:'Cena',              emoji:'🍕', def:null },
+  { id:'cama',        name:'Me voy a la cama',  emoji:'😴', def:22.0 },
+  { id:'lectura',     name:'Lectura',           emoji:'📖', def:null },
+  { id:'musica',      name:'Música',            emoji:'🎵', def:null },
+  { id:'consola',     name:'Consola / Móvil',   emoji:'🎮', def:null },
+  { id:'tele',        name:'Televisión',        emoji:'📺', def:null },
+  { id:'celebracion', name:'¡Celebración!',     emoji:'🎉', def:null },
+];
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let S = {};   // id -> { hour, onTimeline }
+
+function initState() {
+  DEFS.forEach(d => { S[d.id] = { hour: d.def, onTimeline: false }; });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ADAPTIVE LAYOUT ENGINE
+//  Computes pixel positions for every on-timeline marker
+//  with adaptive spacing (min/max per segment).
+// ═══════════════════════════════════════════════════════════
+let LAYOUT = null;   // cached layout, rebuilt on every render
+
+function buildLayout() {
+  const active = DEFS
+    .filter(d => S[d.id].onTimeline)
+    .map(d => ({ id: d.id, hour: S[d.id].hour }))
+    .sort((a,b) => a.hour - b.hour);
+
+  // Anchor array: [top edge, ...markers, bottom edge]
+  const anchors = [
+    { id:'__top', hour: HOUR_START },
+    ...active,
+    { id:'__bot', hour: HOUR_END   },
+  ];
+
+  // Compute segment heights
+  const segPx = [];
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const gap = anchors[i+1].hour - anchors[i].hour;
+    const natural = gap * BASE_PX_HR;
+    const isEdge  = (i === 0) || (i === anchors.length - 2);
+    const mn = isEdge ? 20 : MIN_SEG_PX;
+    const mx = isEdge ? 9999 : MAX_SEG_PX;
+    segPx.push(Math.max(mn, Math.min(mx, natural)));
+  }
+
+  // Y positions of markers
+  const positions = [];
+  let y = segPx[0];   // starts after top edge
+  for (let i = 1; i < anchors.length - 1; i++) {
+    positions.push({ id: anchors[i].id, y });
+    y += segPx[i];
+  }
+
+  const totalH = segPx.reduce((a,b) => a+b, 0);
+  LAYOUT = { anchors, segPx, positions, totalH };
+  return LAYOUT;
+}
+
+// Map real hour → pixel Y using current layout
+function hourToPx(hour) {
+  if (!LAYOUT) return 0;
+  const { anchors, segPx } = LAYOUT;
+  let y = 0;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const h0 = anchors[i].hour, h1 = anchors[i+1].hour;
+    if (hour <= h1 || i === anchors.length - 2) {
+      const range = h1 - h0;
+      const frac  = range > 0 ? Math.max(0, Math.min(1, (hour-h0)/range)) : 0;
+      return y + frac * segPx[i];
+    }
+    y += segPx[i];
+  }
+  return y;
+}
+
+// Map pixel Y → real hour (inverse of above)
+function pxToHour(px) {
+  if (!LAYOUT) return HOUR_START;
+  const { anchors, segPx } = LAYOUT;
+  let y = 0;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    if (px <= y + segPx[i] || i === anchors.length - 2) {
+      const frac = segPx[i] > 0 ? Math.max(0, Math.min(1,(px-y)/segPx[i])) : 0;
+      return anchors[i].hour + frac*(anchors[i+1].hour - anchors[i].hour);
+    }
+    y += segPx[i];
+  }
+  return HOUR_END;
+}
+
+function clientYToHour(cy) {
+  const rect = track.getBoundingClientRect();
+  return pxToHour(cy - rect.top);
+}
+
+function snap(h) { return Math.round(h*4)/4; }
+
+function hStr(h) {
+  const hh=Math.floor(h), mm=Math.round((h-hh)*60);
+  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DOM
+// ═══════════════════════════════════════════════════════════
+const track      = document.getElementById('timelineTrack');
+const bankEl     = document.getElementById('bankItems');
+const zonesEl    = document.getElementById('zonesLayer');
+const rulerEl    = document.getElementById('hourRuler');
+const ghostEl    = document.getElementById('dropGhost');
+const cloneEl    = document.getElementById('dragClone');
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD BANK
+// ═══════════════════════════════════════════════════════════
+function buildBank() {
+  bankEl.innerHTML = '';
+  DEFS.forEach((d, i) => {
+    const c = document.createElement('div');
+    c.className = 'bank-chip';
+    c.dataset.id = d.id;
+    c.style.background = COLORS[i % COLORS.length];
+    c.innerHTML = `<span class="chip-emoji">${d.emoji}</span>${d.name}`;
+    c.addEventListener('mousedown', onBankMD);
+    c.addEventListener('touchstart', onBankTS, { passive:false });
+    bankEl.appendChild(c);
+  });
+}
+
+function syncBank() {
+  bankEl.querySelectorAll('.bank-chip').forEach(c => {
+    c.classList.toggle('used', S[c.dataset.id].onTimeline);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════
+function render() {
+  const L = buildLayout();
+  track.style.height = L.totalH + 'px';
+
+  // ── Ruler ────────────────────────────────────────────────
+  rulerEl.innerHTML = '';
+  for (let h = HOUR_START; h <= HOUR_END; h++) {
+    const py = hourToPx(h);
+    const t = document.createElement('div');
+    t.className = 'hour-tick';
+    t.style.top = py + 'px';
+    t.textContent = h < HOUR_END ? h+'h' : '';
+    rulerEl.appendChild(t);
+  }
+
+  // ── Zones ────────────────────────────────────────────────
+  zonesEl.innerHTML = '';
+  const active = DEFS
+    .filter(d => S[d.id].onTimeline)
+    .sort((a,b) => S[a.id].hour - S[b.id].hour);
+
+  const za = [
+    { hour: HOUR_START },
+    ...active.map(d => ({ hour: S[d.id].hour })),
+    { hour: HOUR_END   },
+  ];
+
+  for (let i = 0; i < za.length-1; i++) {
+    const y0 = hourToPx(za[i].hour), y1 = hourToPx(za[i+1].hour);
+    const h  = Math.max(0, y1-y0);
+    const isEdge = (i===0)||(i===za.length-2);
+    const z  = document.createElement('div');
+    z.className = 'zone';
+    z.style.top    = y0 + 'px';
+    z.style.height = h  + 'px';
+    z.style.background = isEdge ? 'rgba(255,255,255,.03)' : ZONE_BG[i % ZONE_BG.length];
+    if (!isEdge && h > 28) {
+      const dur  = za[i+1].hour - za[i].hour;
+      const hh   = Math.floor(dur), mm = Math.round((dur-hh)*60);
+      const txt  = hh>0&&mm>0 ? `${hh}h ${mm}m` : hh>0 ? `${hh}h` : `${mm}m`;
+      const fs   = h>70?'1rem':h>44?'.78rem':'.6rem';
+      z.innerHTML= `<div class="zone-label" style="font-size:${fs}">${txt}</div>`;
+    }
+    zonesEl.appendChild(z);
+  }
+
+  // ── Markers ──────────────────────────────────────────────
+  track.querySelectorAll('.marker').forEach(el => el.remove());
+
+  L.positions.forEach(({ id, y }) => {
+    const def   = DEFS.find(d => d.id===id);
+    const ci    = DEFS.indexOf(def);
+    const color = COLORS[ci % COLORS.length];
+
+    const el = document.createElement('div');
+    el.className  = 'marker';
+    el.dataset.id = id;
+    el.style.top  = (y-27) + 'px';
+    el.innerHTML  = `
+      <div class="marker-line" style="background:${color}50"></div>
+      <div class="marker-inner" style="border-color:${color}88">
+        <span class="marker-emoji">${def.emoji}</span>
+        <div>
+          <div class="marker-name" style="color:${color}">${def.name}</div>
+          <div class="marker-time">${hStr(S[id].hour)}</div>
+        </div>
+      </div>`;
+    el.addEventListener('mousedown', onMarkerMD);
+    el.addEventListener('touchstart', onMarkerTS, { passive:false });
+    el.addEventListener('dblclick', () => removeMarker(id));
+    track.appendChild(el);
+  });
+
+  syncBank();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAG — MARKER ON TIMELINE
+// ═══════════════════════════════════════════════════════════
+let drag = null;
+
+function onMarkerMD(e) {
+  if (e.button!==0) return;
+  startDrag(e.currentTarget.dataset.id);
+  window.addEventListener('mousemove', onDMM);
+  window.addEventListener('mouseup',   onDMU);
+  e.preventDefault();
+}
+function onMarkerTS(e) {
+  startDrag(e.currentTarget.dataset.id);
+  window.addEventListener('touchmove', onDTM, { passive:false });
+  window.addEventListener('touchend',  onDTE);
+  e.preventDefault();
+}
+function startDrag(id) {
+  drag = { id };
+  track.querySelectorAll('.marker').forEach(el => { if(el.dataset.id===id) el.style.zIndex=50; });
+}
+function onDMM(e)  { moveDrag(e.clientY); }
+function onDTM(e)  { e.preventDefault(); moveDrag(e.touches[0].clientY); }
+function moveDrag(cy) {
+  if (!drag) return;
+  const h = Math.max(HOUR_START+.25, Math.min(HOUR_END-.25, snap(clientYToHour(cy))));
+  S[drag.id].hour = h;
+  render();
+}
+function onDMU()   { endDrag(); window.removeEventListener('mousemove',onDMM); window.removeEventListener('mouseup',onDMU); }
+function onDTE()   { endDrag(); window.removeEventListener('touchmove',onDTM); window.removeEventListener('touchend',onDTE); }
+function endDrag() {
+  if (!drag) return;
+  checkAlert(drag.id);
+  drag = null;
+  track.querySelectorAll('.marker').forEach(el => el.style.zIndex='');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAG — FROM BANK TO TIMELINE
+// ═══════════════════════════════════════════════════════════
+let bdrag = null;
+
+function onBankMD(e) {
+  if (e.button!==0) return;
+  const id = e.currentTarget.dataset.id;
+  if (S[id].onTimeline) return;
+  startBDrag(id, e.clientX, e.clientY, e.currentTarget);
+  window.addEventListener('mousemove', onBMM);
+  window.addEventListener('mouseup',   onBMU);
+  e.preventDefault();
+}
+function onBankTS(e) {
+  const id = e.currentTarget.dataset.id;
+  if (S[id].onTimeline) return;
+  startBDrag(id, e.touches[0].clientX, e.touches[0].clientY, e.currentTarget);
+  window.addEventListener('touchmove', onBTM, { passive:false });
+  window.addEventListener('touchend',  onBTE);
+  e.preventDefault();
+}
+function startBDrag(id, cx, cy, chip) {
+  bdrag = { id };
+  cloneEl.innerHTML = chip.outerHTML;
+  cloneEl.style.cssText = `display:block;left:${cx-80}px;top:${cy-20}px`;
+  chip.classList.add('dragging');
+  track.classList.add('drop-active');
+}
+function onBMM(e) { moveBDrag(e.clientX, e.clientY); }
+function onBTM(e) { e.preventDefault(); moveBDrag(e.touches[0].clientX, e.touches[0].clientY); }
+function moveBDrag(cx, cy) {
+  if (!bdrag) return;
+  cloneEl.style.left = cx-80+'px';
+  cloneEl.style.top  = cy-20+'px';
+  const r = track.getBoundingClientRect();
+  const on = cx>=r.left && cx<=r.right && cy>=r.top && cy<=r.bottom;
+  if (on) {
+    const py = hourToPx(snap(clientYToHour(cy)));
+    ghostEl.style.cssText = `display:block;top:${py-27}px`;
+  } else {
+    ghostEl.style.display = 'none';
+  }
+}
+function onBMU(e) { dropBDrag(e.clientX, e.clientY); window.removeEventListener('mousemove',onBMM); window.removeEventListener('mouseup',onBMU); }
+function onBTE(e) { const t=e.changedTouches[0]; dropBDrag(t.clientX,t.clientY); window.removeEventListener('touchmove',onBTM); window.removeEventListener('touchend',onBTE); }
+function dropBDrag(cx, cy) {
+  if (!bdrag) return;
+  cloneEl.style.display = 'none';
+  ghostEl.style.display = 'none';
+  track.classList.remove('drop-active');
+  bankEl.querySelectorAll('.bank-chip').forEach(c => c.classList.remove('dragging'));
+  const r  = track.getBoundingClientRect();
+  const on = cx>=r.left && cx<=r.right && cy>=r.top && cy<=r.bottom;
+  if (on) {
+    const h = Math.max(HOUR_START+.25, Math.min(HOUR_END-.25, snap(clientYToHour(cy))));
+    S[bdrag.id].hour       = h;
+    S[bdrag.id].onTimeline = true;
+    render();
+    checkAlert(bdrag.id);
+    toast(`✅ ¡"${DEFS.find(d=>d.id===bdrag.id).name}" colocado!`, 'ok');
+  }
+  bdrag = null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  REMOVE MARKER
+// ═══════════════════════════════════════════════════════════
+function removeMarker(id) {
+  const def = DEFS.find(d=>d.id===id);
+  S[id].onTimeline = false;
+  S[id].hour = def.def;
+  render();
+  toast(`↩️ "${def.name}" devuelto al banco`);
+}
+
+function resetAll() {
+  initState(); render();
+  toast('🔄 ¡Todo reiniciado!');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ALERTS
+// ═══════════════════════════════════════════════════════════
+function checkAlert(id) {
+  const sorted = DEFS
+    .filter(d => S[d.id].onTimeline)
+    .sort((a,b) => S[a.id].hour - S[b.id].hour);
+  const idx = sorted.findIndex(d=>d.id===id);
+  if (idx<0) return;
+  const h   = S[id].hour;
+  const nm  = DEFS.find(d=>d.id===id).name;
+
+  // Near bedtime?
+  if (id!=='cama' && S['cama'].onTimeline && h >= S['cama'].hour-.25) {
+    toast(`😬 ¡"${nm}" está muy cerca de la hora de dormir!`); shakeAll(); return;
+  }
+  const prev = sorted[idx-1], next = sorted[idx+1];
+  if (prev && h - S[prev.id].hour < .25) {
+    toast(`⚡ "${nm}" choca con "${prev.name}"!`); shakeAll();
+  } else if (next && S[next.id].hour - h < .25) {
+    toast(`⚡ "${nm}" choca con "${next.name}"!`); shakeAll();
+  }
+}
+function shakeAll() {
+  setTimeout(() => {
+    track.querySelectorAll('.marker').forEach(el => {
+      el.classList.add('shake');
+      setTimeout(() => el.classList.remove('shake'), 540);
+    });
+  }, 80);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+function toast(msg, type='warn') {
+  const el = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+initState();
+buildBank();
+render();
+</script>
+</body>
+</html>
